@@ -18,8 +18,13 @@ struct RunSCAIL2 {
         }
         switch mode {
         case "--s0-gate":
-            FileHandle.standardError.write(Data("S0 key-contract gate: not implemented yet\n".utf8))
-            exit(2)
+            let rest = Array(args.dropFirst())
+            let weightsDir = rest.first
+                ?? "/Volumes/DEV_ARCHIVE/scail-2-mlx/weights/mlx"
+            let fixture = rest.count > 1
+                ? rest[1]
+                : "Tests/SCAIL2Tests/Fixtures/key_contract.json"
+            exit(S0Gate.run(weightsDir: weightsDir, fixturePath: fixture))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)

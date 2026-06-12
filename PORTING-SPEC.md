@@ -31,7 +31,7 @@ modes, maybe a trimmed capability) before any `ModelPackage` wrap.
 
 | phase | scope | gate | status |
 |---|---|---|---|
-| **S0** | scaffold; config decode; key contract vs `dit/umt5/clip/vae.safetensors` headers (Foundation-only, offline); donor key-path comparison → lift/translate decisions | 0 missing / 0 unused per component | — |
+| **S0** | scaffold; config decode; key contract vs `dit/umt5/clip/vae.safetensors` headers (Foundation-only, offline); donor key-path comparison → lift/translate decisions | 0 missing / 0 unused per component | **PASSED 2026-06-12** — dit 1307 / umt5 242 / clip 393 / vae 194, generators cross-checked vs pinned fixture. Donor verdicts: **umT5 LIFT verbatim** (native key match incl. `gate_proj`/`pos_embedding`); **schedulers LIFT** (donor ships Euler+DPM++(2M)+UniPC); **Wan block LIFT + adapt** — FFN keys are `ffn.layers.{0,2}` here vs donor `fc1/fc2` (fix natively with literal "0"/"2" ModuleInfo keys under a "layers" child, NO load-time remap), plus i2v `k_img/v_img/norm_k_img` and affine `norm3`; RoPE/CLIP/VAE2.1/pipeline TRANSLATE from oracle as planned |
 | **S1** | substrate forwards on real weights vs oracle fixtures (CPU stream): Wan block, umT5, CLIP visual, VAE encode + chunked decode, RoPE units (incl. both shift regimes + pose pool) | oracle's own thresholds (≤1e-4 RoPE, ≤1e-3 component) | — |
 | **S2** | few-step e2e golden: injected numpy noise/contexts, animation + replace modes, history on/off | match oracle e2e fixture ≤0.05 | — |
 | **S2b** | tokenizer wiring (`google/umt5-xxl`) + ONE real GPU generation (animation_001, dpm++ 16) — the eyeball gate | visually clean; checkerboard detector clean | — |
