@@ -13,6 +13,13 @@ video) on Apple Silicon.
 > capability), then decide what an engine wrap should even look like.
 > See [PORTING-SPEC.md](PORTING-SPEC.md) for the S0–S7 plan, donor map,
 > and carried-over traps.
+>
+> **Current state:** S0 only. `Sources/SCAIL2/` holds the config, key
+> contract, and safetensors-header reader (`SCAIL2Config.swift`,
+> `KeyContract.swift`, `SafetensorsHeader.swift`); the model and pipeline are
+> not written yet. `Sources/RunSCAIL2/` has the S0 Metal-context gate
+> (`S0Gate.swift`); later `--sN` gates land as the port progresses. `tools/`
+> (fixture dumpers) is currently an empty placeholder.
 
 ## Lineage
 
@@ -27,11 +34,24 @@ video) on Apple Silicon.
 ## Layout
 
 ```
-Sources/SCAIL2/        # core: models, pipeline (S1+)
-Sources/RunSCAIL2/     # CLI: generation + all Metal-context gates (--sN-gate)
-Tests/SCAIL2Tests/     # never-eval tests only (key paths, config, scalars)
-tools/                 # fixture dumpers (run with the oracle's Python venv)
+Sources/SCAIL2/        # core: config, key contract, safetensors header (S0);
+                       #   models + pipeline land at S1+
+Sources/RunSCAIL2/     # CLI: RunSCAIL2 + Metal-context gates (S0Gate now; --sN later)
+Tests/SCAIL2Tests/     # never-eval tests only (config, key contract; Fixtures/)
+tools/                 # fixture dumpers (empty placeholder; run with the oracle venv)
 ```
+
+## Build
+
+```bash
+swift build
+swift test          # never-eval tests (config + key contract)
+```
+
+Targets (`Package.swift`): library `SCAIL2` and executable `RunSCAIL2`.
+Platform `macOS 15+`. Dependencies: `ml-explore/mlx-swift` (≥0.30.0) and
+`huggingface/swift-transformers` (umT5 sentencepiece tokenizer only; weight
+download is the port's own loader).
 
 ## License
 
