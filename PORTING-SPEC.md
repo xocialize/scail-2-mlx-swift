@@ -59,7 +59,21 @@ rule). Revisit at S7.
 | **S3** | multi-segment long video (history overlap); preprocessing (bicubic, mask compress) parity | bit-match oracle utils | — |
 | **S5** | memory machinery: reuse wan-core decode-memory levers (StreamingDecode + `Memory.cacheLimit` cap); peak-`phys_footprint` report at 480p envelope → `residentBytes` | flat per-step active memory; measured phys | — |
 | **S6** | quantized variant — **BLOCKED on Python side**: q4 fails its own gate (CPU-true cosine 0.9498 vs ≥0.99); q8 CPU verification pending. Port whichever tier the oracle certifies; cross-validate same-fixture | oracle's certified gate | blocked |
-| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit dep + engine dep): `ModelPackage`, capability (character-animation / textToVideo lane), two-layer license gate, C0–C13, measured `QuantFootprint`. Wire into `WAN_TESTING` app harness. | C0–C13 pass; runs in the Wan test app | target |
+| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit + engine dep): `ModelPackage` (C13 engine-owned lifecycle, `@InferenceActor`), `SCAIL2Configuration` (C9 Codable/defaultable), `RequirementsManifest` with measured per-quant `residentBytes` (C10), two-layer license gate (C7 weight Apache-2.0 / C8 port-code Apache-2.0), contract version (C0), `@unknown default` discipline (C12). Wire into `WAN_TESTING` app harness; quantify a real run. | C0–C13 pass; runs in Wan test app | target |
+
+### S7 open design question (STOP-AND-ASK before wrapping)
+
+**Which canonical capability?** SCAIL-2's I/O is *ref image + driving video → video
+performing that motion* — motion transfer, not text-to-video and not editing the
+driving clip. The 1.2.0 enum (18 cases: `textToVideo`, `imageEdit`, `videoAnalysis`,
+…) has no clean fit; `videoEdit` is the nearest but wrong semantics (we don't edit
+the driving video). Wan2.2-Animate is the same shape (family table: "different lane,
+new capability"). Per the skill, **a capability not in the enum is core-owned →
+stop-and-ask the engine maintainer**. Options to put to them: (a) new
+`characterAnimation` capability, (b) a motion-transfer `videoToVideo`, or (c) map to
+an existing case with mode/specialty tags. Resolve WITH the maintainer at S7 entry,
+shared with the Animate lane (don't invent an enum case unilaterally). Driving-mask
+input arrives via the user's masking tool (28-ch color-coded), a SCAIL request field.
 
 ## Known traps carried from the Python port + donor
 
