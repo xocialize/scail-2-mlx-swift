@@ -11,7 +11,7 @@ struct RunSCAIL2 {
         guard let mode = args.first else {
             FileHandle.standardError.write(Data("""
             scail-2-mlx-swift — S0 scaffold. Gates land per PORTING-SPEC.md.
-            usage: RunSCAIL2 --s0-gate | --generate <args>
+            usage: RunSCAIL2 --s0-gate | --s0b-gate | --generate <args>
 
             """.utf8))
             exit(1)
@@ -25,6 +25,10 @@ struct RunSCAIL2 {
                 ? rest[1]
                 : "Tests/SCAIL2Tests/Fixtures/key_contract.json"
             exit(S0Gate.run(weightsDir: weightsDir, fixturePath: fixture))
+        case "--s0b-gate":
+            let weightsDir = Array(args.dropFirst()).first
+                ?? "/Volumes/DEV_ARCHIVE/scail-2-mlx/weights/mlx"
+            exit(S0bGate.run(weightsDir: weightsDir))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)
