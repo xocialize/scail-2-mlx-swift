@@ -29,6 +29,10 @@ struct RunSCAIL2 {
             let weightsDir = Array(args.dropFirst()).first
                 ?? "/Volumes/DEV_ARCHIVE/scail-2-mlx/weights/mlx"
             exit(S0bGate.run(weightsDir: weightsDir))
+        case "--s1-rope-gate":
+            let dir = Array(args.dropFirst()).first
+                ?? "Tests/SCAIL2Tests/Fixtures/rope"
+            exit(S1RoPEGate.run(fixtureDir: dir))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)

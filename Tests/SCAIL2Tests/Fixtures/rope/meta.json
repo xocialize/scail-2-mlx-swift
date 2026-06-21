@@ -1,0 +1,12 @@
+{
+ "numHeads": 4,
+ "headDim": 32,
+ "F": 4,
+ "H": 8,
+ "W": 8,
+ "refLen": 64,
+ "vidLen": 256,
+ "poseLen": 64,
+ "seq": 384,
+ "halfD": 16
+}
