@@ -1,18 +1,24 @@
 // swift-tools-version: 6.2
-// scail-2-mlx-swift — STANDALONE Swift/MLX port of SCAIL-2 (zai-org): end-to-end
-// controlled character animation (reference image + driving video -> video).
-// Deliberately NOT MLXEngine-integrated yet (the 14B pipeline is too heavy for
-// engine admission as-is); this repo iterates on the model standalone to learn
-// the right usage surface first. Python oracle: DEV_ARCHIVE/scail-2-mlx
-// (parity-locked vs PyTorch). Swift component donor: bernini-r-mlx-swift
-// (Wan2.2 family, S0-S6 parity-locked). See PORTING-SPEC.md.
+// scail-2-mlx-swift — Swift/MLX port of SCAIL-2 (zai-org): end-to-end controlled
+// character animation (reference image + driving video -> video). A Wan-family
+// member: a Wan2.1-I2V-14B fork consuming the shared `wan-core` substrate
+// (WanModel DiT · 16-ch WanVAE + StreamingDecode · umT5-XXL · RoPE · schedulers).
+//
+// Net-new SCAIL delta over the substrate (lives in the SCAIL2 target): 3-segment
+// ref/video/pose RoPE, dual mask patch embeddings, CLIP-conditioned i2v
+// cross-attention + the open-clip xlm-roberta ViT-H visual tower, and the
+// segmented animation pipeline. Python oracle (parity-locked): DEV_ARCHIVE/scail-2-mlx.
+//
+// The MLXEngine wrapper target (`MLXSCAIL2` + MLXToolKit dep) lands at S7 — kept
+// out of the graph through the parity phases to keep iteration light. See PORTING-SPEC.md.
 
 import PackageDescription
 
 let package = Package(
     name: "SCAIL2",
     platforms: [
-        .macOS(.v15)
+        // v26 to match the MLXEngine contract (MLXToolKit) the S7 wrapper will link.
+        .macOS(.v26)
     ],
     products: [
         .library(name: "SCAIL2", targets: ["SCAIL2"]),
@@ -21,11 +27,15 @@ let package = Package(
         .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.30.0"),
         // Tokenizers (umT5 sentencepiece) only; weight download is our own loader.
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.1.6"),
+        // The neutral Wan substrate, shared with bernini/ti2v/helios/vace/phantom.
+        // Local path dep; a wan-core edit recompiles into every consumer.
+        .package(path: "../wan-core-mlx-swift"),
     ],
     targets: [
         .target(
             name: "SCAIL2",
             dependencies: [
+                .product(name: "WanCore", package: "wan-core-mlx-swift"),
                 .product(name: "MLX", package: "mlx-swift"),
                 .product(name: "MLXNN", package: "mlx-swift"),
                 .product(name: "MLXFast", package: "mlx-swift"),
@@ -36,7 +46,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "RunSCAIL2",
-            dependencies: ["SCAIL2"],
+            dependencies: [
+                "SCAIL2",
+                .product(name: "WanCore", package: "wan-core-mlx-swift"),
+            ],
             path: "Sources/RunSCAIL2"
         ),
         .testTarget(

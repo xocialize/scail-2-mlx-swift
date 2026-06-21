@@ -1,5 +1,5 @@
-.build/
-.DS_Store
-weights/
 *.safetensors
+.DS_Store
+.build/
 Fixtures/*.npy
+weights/
