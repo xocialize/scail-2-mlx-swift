@@ -33,6 +33,10 @@ struct RunSCAIL2 {
             let dir = Array(args.dropFirst()).first
                 ?? "Tests/SCAIL2Tests/Fixtures/rope"
             exit(S1RoPEGate.run(fixtureDir: dir))
+        case "--s1-patchembed-gate":
+            let dir = Array(args.dropFirst()).first
+                ?? "Tests/SCAIL2Tests/Fixtures/patchembed"
+            exit(S1PatchEmbedGate.run(fixtureDir: dir))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)
