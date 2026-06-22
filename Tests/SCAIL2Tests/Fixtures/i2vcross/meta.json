@@ -1,0 +1,7 @@
+{
+ "dim": 64,
+ "heads": 4,
+ "L1": 32,
+ "imgLen": 8,
+ "textLen": 512
+}
