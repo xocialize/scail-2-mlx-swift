@@ -1,0 +1,13 @@
+{
+ "image_size": 28,
+ "patch_size": 14,
+ "dim": 32,
+ "mlp_ratio": 4,
+ "out_dim": 16,
+ "num_heads": 2,
+ "num_layers": 3,
+ "pool_type": "token",
+ "pre_norm": true,
+ "post_norm": false,
+ "activation": "gelu"
+}

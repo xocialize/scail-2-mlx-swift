@@ -41,6 +41,10 @@ struct RunSCAIL2 {
             let dir = Array(args.dropFirst()).first
                 ?? "Tests/SCAIL2Tests/Fixtures/i2vcross"
             exit(S1I2VCrossGate.run(fixtureDir: dir))
+        case "--s1-clip-gate":
+            let dir = Array(args.dropFirst()).first
+                ?? "Tests/SCAIL2Tests/Fixtures/clip"
+            exit(S1CLIPGate.run(fixtureDir: dir))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)
