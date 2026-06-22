@@ -24,15 +24,11 @@ enum S1I2VCrossGate {
         var result: Int32 = 0
         Device.withDefaultDevice(.cpu) {
             let attn = I2VCrossAttention(dim, heads, qkNorm: true, textLen: textLen)
-            // load dumped weights under SCAIL key names (w_<key__with__dunders>)
-            let names = ["q", "k", "v", "o", "k_img", "v_img"]
+            // load by the module's own flattened keys (now natural: norm_q.weight etc.)
+            let want = Set(attn.parameters().flattened().map { $0.0 })
             var params: [String: MLXArray] = [:]
-            for p in names {
-                params["\(p).weight"] = load("w_\(p)__weight")
-                params["\(p).bias"] = load("w_\(p)__bias")
-            }
-            for n in ["norm_q", "norm_k", "norm_k_img"] {
-                params[n] = load("w_\(n)__weight")
+            for key in want {
+                params[key] = load("w_" + key.replacingOccurrences(of: ".", with: "__"))
             }
             try! attn.update(parameters: ModuleParameters.unflattened(params), verify: [.all])
 

@@ -1,0 +1,20 @@
+{
+ "patch_size": [
+  1,
+  2,
+  2
+ ],
+ "text_len": 512,
+ "in_dim": 20,
+ "mask_dim": 28,
+ "dim": 64,
+ "ffn_dim": 128,
+ "freq_dim": 32,
+ "text_dim": 48,
+ "out_dim": 16,
+ "num_heads": 4,
+ "num_layers": 2,
+ "T": 2,
+ "H": 8,
+ "W": 8
+}

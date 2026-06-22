@@ -24,9 +24,9 @@ public final class I2VCrossAttention: Module, @unchecked Sendable {
     @ModuleInfo(key: "o") var o: Linear
     @ModuleInfo(key: "k_img") var kImg: Linear
     @ModuleInfo(key: "v_img") var vImg: Linear
-    @ModuleInfo(key: "norm_q") var normQ: MLXArray?
-    @ModuleInfo(key: "norm_k") var normK: MLXArray?
-    @ModuleInfo(key: "norm_k_img") var normKImg: MLXArray?
+    @ModuleInfo(key: "norm_q") var normQ: RMSNormW
+    @ModuleInfo(key: "norm_k") var normK: RMSNormW
+    @ModuleInfo(key: "norm_k_img") var normKImg: RMSNormW
 
     public init(_ dim: Int, _ numHeads: Int, qkNorm: Bool = true, eps: Float = 1e-6, textLen: Int = 512) {
         precondition(dim % numHeads == 0)
@@ -41,16 +41,10 @@ public final class I2VCrossAttention: Module, @unchecked Sendable {
         self._o.wrappedValue = Linear(dim, dim)
         self._kImg.wrappedValue = Linear(dim, dim)
         self._vImg.wrappedValue = Linear(dim, dim)
-        // RMSNorm weights as bare parameters (oracle WanRMSNorm == MLXFast.rmsNorm)
-        self._normQ.wrappedValue = qkNorm ? MLXArray.ones([dim]) : nil
-        self._normK.wrappedValue = qkNorm ? MLXArray.ones([dim]) : nil
-        self._normKImg.wrappedValue = qkNorm ? MLXArray.ones([dim]) : nil
+        self._normQ.wrappedValue = RMSNormW(dim, eps: eps)
+        self._normK.wrappedValue = RMSNormW(dim, eps: eps)
+        self._normKImg.wrappedValue = RMSNormW(dim, eps: eps)
         super.init()
-    }
-
-    private func rms(_ x: MLXArray, _ w: MLXArray?) -> MLXArray {
-        guard let w else { return x }
-        return MLXFast.rmsNorm(x, weight: w, eps: eps)
     }
 
     // q/k/v: [B, L, dim] -> [B, heads, L, headDim] for SDPA
@@ -65,10 +59,10 @@ public final class I2VCrossAttention: Module, @unchecked Sendable {
         let contextText = context[0..., imgLen...]
         let b = x.dim(0)
 
-        let qT = heads(rms(q(x), normQ))
-        let kT = heads(rms(k(contextText), normK))
+        let qT = heads(normQ(q(x)))
+        let kT = heads(normK(k(contextText)))
         let vT = heads(v(contextText))
-        let kI = heads(rms(kImg(contextImg), normKImg))
+        let kI = heads(normKImg(kImg(contextImg)))
         let vI = heads(vImg(contextImg))
 
         let imgX = MLXFast.scaledDotProductAttention(queries: qT, keys: kI, values: vI, scale: scale, mask: nil)
