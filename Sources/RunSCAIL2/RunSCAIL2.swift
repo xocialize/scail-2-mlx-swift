@@ -49,6 +49,10 @@ struct RunSCAIL2 {
             let dir = Array(args.dropFirst()).first
                 ?? "Tests/SCAIL2Tests/Fixtures/dit"
             exit(S2DiTGate.run(fixtureDir: dir))
+        case "--s2-mask-gate":
+            let dir = Array(args.dropFirst()).first
+                ?? "Tests/SCAIL2Tests/Fixtures/maskcompress"
+            exit(S2MaskGate.run(fixtureDir: dir))
         default:
             FileHandle.standardError.write(Data("unknown mode \(mode)\n".utf8))
             exit(1)
