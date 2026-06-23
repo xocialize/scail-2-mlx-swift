@@ -9,7 +9,7 @@ import MLXToolKit
 /// the on-disk weights are bf16 (`xocialize/SCAIL-2-bf16`) and upcast at load. `quant` therefore
 /// describes the *stored* checkpoint, not the runtime dtype. int4 is BLOCKED upstream (the Python
 /// q4 fails its own parity gate), so the only shipping variant today is `.bf16`.
-public struct SCAIL2Configuration: PackageConfiguration, ModelStorable {
+public struct SCAIL2Configuration: PackageConfiguration, ModelStorable, QuantConfigured {
     public var repo: String
     public var revision: String?
     public var quant: Quant

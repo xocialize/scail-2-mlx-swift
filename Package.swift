@@ -34,7 +34,7 @@ let package = Package(
         .package(path: "../wan-core-mlx-swift"),
         // MLXEngine contract (MLXToolKit) for the S7 wrapper target. 0.9.0 = contract 1.6.0,
         // the version that introduced `characterAnimation` — this model's capability.
-        .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.9.0"),
+        .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.9.1"),
     ],
     targets: [
         .target(
