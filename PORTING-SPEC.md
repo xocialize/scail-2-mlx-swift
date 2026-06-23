@@ -59,21 +59,53 @@ rule). Revisit at S7.
 | **S3** | multi-segment long video (history overlap); preprocessing (bicubic, mask compress) parity | bit-match oracle utils | — |
 | **S5** | memory machinery: reuse wan-core decode-memory levers (StreamingDecode + `Memory.cacheLimit` cap); peak-`phys_footprint` report at 480p envelope → `residentBytes` | flat per-step active memory; measured phys | — |
 | **S6** | quantized variant — **BLOCKED on Python side**: q4 fails its own gate (CPU-true cosine 0.9498 vs ≥0.99); q8 CPU verification pending. Port whichever tier the oracle certifies; cross-validate same-fixture | oracle's certified gate | blocked |
-| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit + engine dep): `ModelPackage` (C13 engine-owned lifecycle, `@InferenceActor`), `SCAIL2Configuration` (C9 Codable/defaultable), `RequirementsManifest` with measured per-quant `residentBytes` (C10), two-layer license gate (C7 weight Apache-2.0 / C8 port-code Apache-2.0), contract version (C0), `@unknown default` discipline (C12). Wire into `WAN_TESTING` app harness; quantify a real run. | C0–C13 pass; runs in Wan test app | target |
+| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit + engine dep): `ModelPackage` (C13 engine-owned lifecycle, `@InferenceActor`), `SCAIL2Configuration` (C9 Codable/defaultable), `RequirementsManifest` with measured per-quant `residentBytes` (C10), two-layer license gate (C7 weight Apache-2.0 / C8 port-code Apache-2.0), contract version (C0), `@unknown default` discipline (C12). Wire into `WAN_TESTING` app harness; quantify a real run. | C0–C13 pass; runs in Wan test app | **SCAFFOLD DONE** (contract side): `MLXSCAIL2` target builds vs published `mlx-engine-swift` 0.9.0 (contract 1.6.0) — `SCAIL2Configuration` (C9), full manifest (C7/C8/C10/C11/C6/C0, `characterAnimation` surface, `.poseless`/`.general` specialties, DERIVED bf16 100 GB footprint), `MLXSCAIL2Package` dispatch + mode→replaceFlag map + 32-divisibility guard. **Remaining = step 4 (runtime):** lift `Loaders.swift`+`MediaIO.swift` from `RunSCAIL2` into the `SCAIL2` lib, fill `SCAILRuntime.fromPretrained`/`generate` (reuse `GenerateMode.run`), then app-link + live run + S5 footprint re-measure. |
 
-### S7 open design question (STOP-AND-ASK before wrapping)
+### S7 capability resolution (STOP-AND-ASK — RESOLVED 2026-06-22, maintainer-ratified)
 
 **Which canonical capability?** SCAIL-2's I/O is *ref image + driving video → video
 performing that motion* — motion transfer, not text-to-video and not editing the
-driving clip. The 1.2.0 enum (18 cases: `textToVideo`, `imageEdit`, `videoAnalysis`,
-…) has no clean fit; `videoEdit` is the nearest but wrong semantics (we don't edit
-the driving video). Wan2.2-Animate is the same shape (family table: "different lane,
-new capability"). Per the skill, **a capability not in the enum is core-owned →
-stop-and-ask the engine maintainer**. Options to put to them: (a) new
-`characterAnimation` capability, (b) a motion-transfer `videoToVideo`, or (c) map to
-an existing case with mode/specialty tags. Resolve WITH the maintainer at S7 entry,
-shared with the Animate lane (don't invent an enum case unilaterally). Driving-mask
-input arrives via the user's masking tool (28-ch color-coded), a SCAIL request field.
+driving clip. The 1.5.0 enum (`textToVideo`, `imageEdit`, `videoEdit`, `talkingHead`,
+`matting`, …) has no clean fit; `videoEdit` is the nearest but wrong semantics (we
+don't edit the driving video), and a mode/specialty tag on an existing case would
+smuggle the ref-image + driving-video inputs through `metaData` (C4/C5 violation).
+
+**DECISION → new `characterAnimation` capability** (option a; `motionTransfer` and
+existing-case+mode both rejected). **CONTRACT CHANGE LANDED 2026-06-22** in
+`mlx-engine-swift` (MLXToolKit builds + 38 MLXToolKitTests green, full engine build
+green → C12 held): `Capability.characterAnimation` + `CharacterAnimation.swift`
+(Request/Response/Contract) + `CanonicalOutput→.video` + `ContractVersion` 1.6.0 +
+`Mode.animation/.replacement` + `Specialty.poseless/.poseDriven` +
+`capability-contract.md` §"characterAnimation". (Also fixed a pre-existing stale test:
+`testContractVersionIsV1_4` had never been updated past the 1.5.0/matting bump.) The
+SCAIL-2 `MLXSCAIL2` package wrap (below) now targets this capability. Rationale: named
+by user-facing task/output, not
+mechanism (the `talkingHead` precedent — not "audio-driven lip-sync"); one canonical
+input schema + `Video` output; forward-compatible with the whole Animate lane
+(Wan2.2-Animate / UniAnimate / MagicTryOn / …), which is the signal it's a real
+capability and not a mode. Matches `ENHANCEMENTS.md` §1.5 "character-animation lane".
+
+Concrete contract change (additive minor bump → **contract 1.6.0**, current 1.5.0):
+- **Capability:** add `case characterAnimation` to `MLXToolKit/Capability.swift`
+  (additive; bump `ContractVersion` with a 1.6.0 entry).
+- **CanonicalOutput:** maps to `.video`.
+- **Modes:** `.animation` / `.replacement` — the `replaceFlag` is a per-request tag
+  (same input artifacts, different output semantics). C4-clean.
+- **Specialty:** add `poseless` (SCAIL) vs `poseDriven` (Wan2.2-Animate) so the Model
+  Manager ranks lane members.
+- **Canonical request (`CharacterAnimationRequest`, LANE-READY scope):**
+  `referenceImage: Image` (req) · `drivingVideo: Video` (req) · `drivingMask: Video?` ·
+  `prompt: String?` · shared sampler envelope (`mode`, steps, guidance, shift, seed,
+  solver) · `metaData`. Optional `drivingMask`/`prompt` declared now so Animate plugs
+  in with no second schema revision. Response: `Video`.
+- **Package-internal (NOT request fields):** SCAIL's 28-ch color-coded mask
+  *compression* — the user supplies a normal RGB mask video; the package compresses
+  internally. Animate's pose/face extraction is likewise internal preprocessing. Keeps
+  the canonical request clean (no C5 smuggle).
+- **C12:** after adding the enum case, grep every package's `switch` over `Capability`
+  for `@unknown default` before publishing.
+- Add the canonical schema to `capability-contract.md` + the `Capability`/request types
+  to `MLXToolKit`, versioned together.
 
 ## Known traps carried from the Python port + donor
 

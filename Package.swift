@@ -22,6 +22,8 @@ let package = Package(
     ],
     products: [
         .library(name: "SCAIL2", targets: ["SCAIL2"]),
+        // The MLXEngine wrapper: a conformant `ModelPackage` over the SCAIL pipeline.
+        .library(name: "MLXSCAIL2", targets: ["MLXSCAIL2"]),
     ],
     dependencies: [
         .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.30.0"),
@@ -30,6 +32,9 @@ let package = Package(
         // The neutral Wan substrate, shared with bernini/ti2v/helios/vace/phantom.
         // Local path dep; a wan-core edit recompiles into every consumer.
         .package(path: "../wan-core-mlx-swift"),
+        // MLXEngine contract (MLXToolKit) for the S7 wrapper target. 0.9.0 = contract 1.6.0,
+        // the version that introduced `characterAnimation` — this model's capability.
+        .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.9.0"),
     ],
     targets: [
         .target(
@@ -43,6 +48,19 @@ let package = Package(
                 .product(name: "Tokenizers", package: "swift-transformers"),
             ],
             path: "Sources/SCAIL2"
+        ),
+        .target(
+            name: "MLXSCAIL2",
+            dependencies: [
+                "SCAIL2",
+                .product(name: "WanCore", package: "wan-core-mlx-swift"),
+                .product(name: "MLXToolKit", package: "mlx-engine-swift"),
+                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLXNN", package: "mlx-swift"),
+                .product(name: "MLXRandom", package: "mlx-swift"),
+                .product(name: "Tokenizers", package: "swift-transformers"),
+            ],
+            path: "Sources/MLXSCAIL2"
         ),
         .executableTarget(
             name: "RunSCAIL2",
