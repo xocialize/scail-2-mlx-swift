@@ -59,7 +59,7 @@ rule). Revisit at S7.
 | **S3** | multi-segment long video (history overlap); preprocessing (bicubic, mask compress) parity | bit-match oracle utils | — |
 | **S5** | memory machinery: reuse wan-core decode-memory levers (StreamingDecode + `Memory.cacheLimit` cap); peak-`phys_footprint` report at 480p envelope → `residentBytes` | flat per-step active memory; measured phys | — |
 | **S6** | quantized variant — **BLOCKED on Python side**: q4 fails its own gate (CPU-true cosine 0.9498 vs ≥0.99); q8 CPU verification pending. Port whichever tier the oracle certifies; cross-validate same-fixture | oracle's certified gate | blocked |
-| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit + engine dep): `ModelPackage` (C13 engine-owned lifecycle, `@InferenceActor`), `SCAIL2Configuration` (C9 Codable/defaultable), `RequirementsManifest` with measured per-quant `residentBytes` (C10), two-layer license gate (C7 weight Apache-2.0 / C8 port-code Apache-2.0), contract version (C0), `@unknown default` discipline (C12). Wire into `WAN_TESTING` app harness; quantify a real run. | C0–C13 pass; runs in Wan test app | **SCAFFOLD DONE** (contract side): `MLXSCAIL2` target builds vs published `mlx-engine-swift` 0.9.0 (contract 1.6.0) — `SCAIL2Configuration` (C9), full manifest (C7/C8/C10/C11/C6/C0, `characterAnimation` surface, `.poseless`/`.general` specialties, DERIVED bf16 100 GB footprint), `MLXSCAIL2Package` dispatch + mode→replaceFlag map + 32-divisibility guard. **Remaining = step 4 (runtime):** lift `Loaders.swift`+`MediaIO.swift` from `RunSCAIL2` into the `SCAIL2` lib, fill `SCAILRuntime.fromPretrained`/`generate` (reuse `GenerateMode.run`), then app-link + live run + S5 footprint re-measure. |
+| **S7** | **MLXEngine wrap** (`MLXSCAIL2` target + MLXToolKit + engine dep): `ModelPackage` (C13 engine-owned lifecycle, `@InferenceActor`), `SCAIL2Configuration` (C9 Codable/defaultable), `RequirementsManifest` with measured per-quant `residentBytes` (C10), two-layer license gate (C7 weight Apache-2.0 / C8 port-code Apache-2.0), contract version (C0), `@unknown default` discipline (C12). Wire into `WAN_TESTING` app harness; quantify a real run. | C0–C13 pass; runs in Wan test app | **SCAFFOLD + RUNTIME WIRED (offline-green)**: `MLXSCAIL2` builds vs published `mlx-engine-swift` 0.9.0 (contract 1.6.0). Contract side — `SCAIL2Configuration` (C9), full manifest (C7/C8/C10/C11/C6/C0, `characterAnimation` surface, `.poseless`/`.general` specialties, DERIVED bf16 100 GB footprint), `MLXSCAIL2Package` dispatch + mode→replaceFlag + 32-divisibility guard + per-step cancellation. Runtime (step 4 done) — `Loaders.swift`+`MediaIO.swift` lifted from `RunSCAIL2` into the `SCAIL2` lib (now `public`, shared by CLI+wrap; `git mv` history preserved), `SCAILRuntime` (in SCAIL2, `@unchecked Sendable`) implements `fromPretrained`+`generate` 1:1 with `GenerateMode.run` (CLIP+umT5 encode→evict, VAE-encode, `SCAILPipeline.generate`, mp4) over Data I/O (temp-file round-trip for AVFoundation). `SCAILPipeline.onStep` made throwing for cancellation. Full build + 5 parity tests green. **Remaining: APP-VALIDATION** — hand-link `MLXSCAIL2` into `WAN_TESTING`, live GPU run, S5 `residentBytes` re-measure; **+ resolve the still-reference-mask gap** (see §"S7 capability resolution"). |
 
 ### S7 capability resolution (STOP-AND-ASK — RESOLVED 2026-06-22, maintainer-ratified)
 
@@ -102,6 +102,19 @@ Concrete contract change (additive minor bump → **contract 1.6.0**, current 1.
   *compression* — the user supplies a normal RGB mask video; the package compresses
   internally. Animate's pose/face extraction is likewise internal preprocessing. Keeps
   the canonical request clean (no C5 smuggle).
+
+**KNOWN GAP — the still reference-mask (surfaced during step-4 wiring).** SCAIL conditions
+on TWO masks: the per-frame `drivingMask` (canonical) AND a *still foreground mask of the
+reference character* (`ref_mask` → the 28-ch `ref28` latent). The lane-ready
+`CharacterAnimationRequest` has no field for the latter, so the wrap currently sources it
+from `metaData["referenceMask"]` as a **base64 PNG** — a binary artifact in a JSON-scalar
+dict, i.e. a textbook C5 smell. Resolution options (pick before APP-VALIDATION ships a
+product flow): **(a)** auto-derive it from `referenceImage` via the now-published `matting`
+capability (the product-correct path — the caller runs matting then passes the result, which
+*is* a canonical artifact); **(b)** promote to a canonical `referenceMask: Image?` in an
+additive 1.7.0 bump (justified once Animate is examined — if it also wants a still ref mask,
+it's lane-canonical). Until then the base64-metaData path is the documented interim. `Wan2.2-Animate`'s
+own masks stay package-internal preprocessing regardless.
 - **C12:** after adding the enum case, grep every package's `switch` over `Capability`
   for `@unknown default` before publishing.
 - Add the canonical schema to `capability-contract.md` + the `Capability`/request types

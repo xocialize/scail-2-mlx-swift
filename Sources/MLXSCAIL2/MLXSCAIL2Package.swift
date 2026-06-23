@@ -77,7 +77,7 @@ public final class MLXSCAIL2Package: ModelPackage {
         } else {
             directory = try await WeightLoader.snapshotDownload(repoID: configuration.repo)
         }
-        runtime = try SCAILRuntime.fromPretrained(directory: directory, config: SCAIL2Config())
+        runtime = try await SCAILRuntime.fromPretrained(directory: directory, config: SCAIL2Config())
     }
 
     public func unload() async {
@@ -117,12 +117,33 @@ public final class MLXSCAIL2Package: ModelPackage {
         }
         let steps = resolveSteps(mode: request.mode, steps: request.steps)
         let replaceFlag = resolveReplaceFlag(mode: request.mode)
-        let onStep: (Int, Int) -> Void = { _, _ in }  // C13 per-step cancellation wires in at step 4
 
-        let result = try runtime.generate(
+        // SCAIL needs TWO masks: the per-frame `drivingMask` (canonical, but optional in the
+        // lane-ready schema — required here) AND a still foreground mask of the reference. The
+        // latter has no canonical field yet, so it rides `metaData["referenceMask"]` as a base64
+        // PNG (a known C5 smell — flagged for promotion to a canonical `referenceMask: Image?`, or
+        // auto-derivation via the `matting` capability; see PORTING-SPEC §S7).
+        guard let drivingMaskVideo = request.drivingMask else {
+            throw PackageError.configurationMismatch(
+                expected: "drivingMask (per-frame driving mask video — required by SCAIL)", got: "nil")
+        }
+        guard case let .string(refMaskB64)? = request.metaData["referenceMask"],
+              let referenceMask = Data(base64Encoded: refMaskB64) else {
+            throw PackageError.configurationMismatch(
+                expected: "metaData[\"referenceMask\"] = base64 PNG of the still reference foreground "
+                    + "mask (SCAIL conditions on a ref mask + the driving mask)",
+                got: request.metaData["referenceMask"].map { "\($0)" } ?? "absent")
+        }
+
+        let onStep: @Sendable (Int, Int) throws -> Void = { _, _ in
+            try Task.checkCancellation()  // C13: per-denoising-step cancellation
+        }
+
+        let result = try await runtime.generate(
             referenceImage: request.referenceImage.data,
+            referenceMask: referenceMask,
             drivingVideo: request.drivingVideo.data,
-            drivingMask: request.drivingMask?.data,
+            drivingMask: drivingMaskVideo.data,
             prompt: request.prompt ?? "",
             width: width,
             height: height,
@@ -134,6 +155,7 @@ public final class MLXSCAIL2Package: ModelPackage {
             segmentOverlap: 5,
             seed: request.seed ?? 42,
             replaceFlag: replaceFlag,
+            maxFrames: request.numFrames,
             onStep: onStep)
 
         return CharacterAnimationResponse(

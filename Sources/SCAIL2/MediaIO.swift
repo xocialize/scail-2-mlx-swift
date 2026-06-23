@@ -65,17 +65,23 @@ private func cropCHW(_ cg: CGImage, targetH: Int, targetW: Int) -> [Float] {
 }
 
 /// Reference image → [3, H, W] in [-1, 1] (matches generate.py _load_image).
-func loadImageCHW(_ path: String, targetH: Int, targetW: Int) throws -> MLXArray {
+public func loadImageCHW(_ path: String, targetH: Int, targetW: Int) throws -> MLXArray {
     let data = try Data(contentsOf: URL(fileURLWithPath: path))
+    return try loadImageCHW(data: data, targetH: targetH, targetW: targetW, label: path)
+}
+
+/// Same as `loadImageCHW(_:targetH:targetW:)` but from in-memory bytes — the engine path, where a
+/// canonical `Image` artifact arrives as `Data` rather than a file.
+public func loadImageCHW(data: Data, targetH: Int, targetW: Int, label: String = "<data>") throws -> MLXArray {
     guard let src = CGImageSourceCreateWithData(data as CFData, nil),
           let cg = CGImageSourceCreateImageAtIndex(src, 0, nil)
-    else { throw MediaIOError.imageDecode(path) }
+    else { throw MediaIOError.imageDecode(label) }
     let chw = cropCHW(cg, targetH: targetH, targetW: targetW)
     return MLXArray(chw, [3, targetH, targetW])
 }
 
 /// Video → [T, 3, H, W] in [-1, 1] (matches generate.py _load_video, T-C-H-W).
-func loadVideoTCHW(
+public func loadVideoTCHW(
     _ path: String, targetH: Int, targetW: Int, maxFrames: Int? = nil
 ) async throws -> MLXArray {
     let asset = AVURLAsset(url: URL(fileURLWithPath: path))
@@ -121,7 +127,7 @@ private func rgbBytes(_ frame: MLXArray) -> ([UInt8], Int, Int) {
 }
 
 /// Encode [3, T, H, W] in [-1, 1] as an H.264 mp4 at `fps` to `url`.
-func writeMP4(frames: MLXArray, to url: URL, fps: Double) async throws {
+public func writeMP4(frames: MLXArray, to url: URL, fps: Double) async throws {
     let t = frames.dim(1), h = frames.dim(2), w = frames.dim(3)
     if FileManager.default.fileExists(atPath: url.path) {
         try FileManager.default.removeItem(at: url)

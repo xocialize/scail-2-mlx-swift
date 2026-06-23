@@ -11,7 +11,6 @@
 import Foundation
 import MLX
 import MLXNN
-import SCAIL2
 import WanCore
 
 enum SCAILLoadError: Error {
@@ -52,7 +51,7 @@ private func loadInto(
 /// CLIP visual tower (fp16 on disk, kept fp16 like the oracle clip_dtype). On
 /// disk keys are `visual.<…>` + the unused log_scale/head/post_norm — strip the
 /// prefix and drop everything the visual-only module doesn't carry.
-func loadCLIP(_ tower: CLIPVisionTower, url: URL) throws {
+public func loadCLIP(_ tower: CLIPVisionTower, url: URL) throws {
     try loadInto(tower, url: url, component: "clip", castFP32: false) { k in
         guard k.hasPrefix("visual.") else { return nil }
         return String(k.dropFirst("visual.".count))
@@ -60,18 +59,18 @@ func loadCLIP(_ tower: CLIPVisionTower, url: URL) throws {
 }
 
 /// 16-ch WanVAE (fp32 on disk). Encoder enabled (we VAE-encode ref/pose/history).
-func loadVAE(_ vae: WanVAE, url: URL) throws {
+public func loadVAE(_ vae: WanVAE, url: URL) throws {
     try loadInto(vae, url: url, component: "vae", castFP32: false)
 }
 
 /// umT5-XXL encoder — cast to fp32 (mlx-video load_t5_encoder parity).
-func loadUMT5(_ enc: UMT5EncoderModel, url: URL) throws {
+public func loadUMT5(_ enc: UMT5EncoderModel, url: URL) throws {
     try loadInto(enc, url: url, component: "umt5", castFP32: true)
 }
 
 /// SCAIL DiT — cast to fp32 (family fp32-DiT rule at video seqLen). ~64 GB
 /// resident at the 14B/fp32 config; loaded last so it never co-resides with the
 /// (already-evicted) umT5/CLIP encoders.
-func loadDiT(_ model: SCAILModel, url: URL) throws {
+public func loadDiT(_ model: SCAILModel, url: URL) throws {
     try loadInto(model, url: url, component: "dit", castFP32: true, chunk: 24)
 }

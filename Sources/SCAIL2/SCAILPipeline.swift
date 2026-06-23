@@ -60,8 +60,8 @@ public final class SCAILPipeline {
         poseVideo: MLXArray, drivingMask: MLXArray,
         replaceFlag: Bool, options o: SCAILGenerateOptions,
         noise noiseFn: (([Int]) -> MLXArray)? = nil,
-        onStep: ((Int, Int) -> Void)? = nil
-    ) -> MLXArray {
+        onStep: ((Int, Int) throws -> Void)? = nil
+    ) throws -> MLXArray {
         let numFrames = poseVideo.dim(0)
         let segments = buildSegments(numFrames, o)
         let latC = refLatent.dim(0)
@@ -98,7 +98,7 @@ public final class SCAILPipeline {
 
             let noise = (noiseFn ?? { MLXRandom.normal($0) })([latC, latT, latH, latW])
 
-            let video = sampleSegment(
+            let video = try sampleSegment(
                 noise: noise, poseLatent: poseLatent, drivingMasks: drivingMasks,
                 refLatent: refLatent, refMasks: refMasks, clipFea: clipFea,
                 context: context, contextNull: contextNull, historyMask: historyMask,
@@ -119,8 +119,8 @@ public final class SCAILPipeline {
         refLatent: MLXArray, refMasks: MLXArray, clipFea: MLXArray,
         context: MLXArray, contextNull: MLXArray, historyMask: MLXArray?,
         historyLatent: MLXArray?, replaceFlag: Bool, options o: SCAILGenerateOptions,
-        onStep: ((Int, Int) -> Void)?
-    ) -> MLXArray {
+        onStep: ((Int, Int) throws -> Void)?
+    ) throws -> MLXArray {
         let unipc = o.solver == "unipc" ? FlowUniPCScheduler() : nil
         let dpmpp = o.solver == "dpm++" ? FlowDPMPP2MScheduler() : nil
         unipc?.setTimesteps(o.samplingSteps, shift: o.shift)
@@ -154,7 +154,7 @@ public final class SCAILPipeline {
                 ?? dpmpp!.step(modelOutput: noisePred[.newAxis], timestep: t, sample: latent[.newAxis])
             latent = applyClean(stepped[0])
             eval(latent)  // bound the graph per step (family runBlocks discipline)
-            onStep?(i + 1, timesteps.count)
+            try onStep?(i + 1, timesteps.count)
         }
         // Streaming decode (the oracle's decode_chunked): the Rep first-chunk
         // cache gives the upstream-faithful 1+(T-1)·4 frame count with flat

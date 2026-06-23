@@ -174,7 +174,7 @@ enum GenerateMode {
             err("[gen] denoise: solver=\(a.solver) steps=\(a.steps) guide=\(a.guide) "
                 + "replace=\(a.replaceFlag) seed=\(a.seed)")
             // free the now-dead encoder outputs' container refs (latents kept)
-            let video = pipeline.generate(
+            let video = try pipeline.generate(
                 refLatent: refLatent, refMask28: ref28, clipFea: clipFea,
                 context: context, contextNull: contextNull,
                 poseVideo: poseVideo, drivingMask: drivingMask,
