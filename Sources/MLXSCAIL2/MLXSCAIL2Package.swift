@@ -30,13 +30,14 @@ public final class MLXSCAIL2Package: ModelPackage {
             ),
             requirements: RequirementsManifest(
                 // DERIVED, pending the S5 in-app re-measure. The DiT runs fp32 (bf16 NaNs the DiT at
-                // video seqLen); measured at 512×288/65f on the 128 GB box: ~65.6 GB DiT resident,
-                // ~70 GB steady denoise, ~99 GB decode peak (CLIP+umT5 encoded then EVICTED before
-                // the DiT loads). Native-res is higher → pro tier. int4 is BLOCKED upstream (Python
-                // q4 fails its own parity gate), so bf16 (fp32-runtime) is the only variant today.
-                // Re-ground residentBytes on the measured phys after the live run (S5).
+                // video seqLen); the DiT runs fp32. int4 is BLOCKED upstream (Python q4 fails its own
+                // parity gate), so bf16 (fp32-runtime) is the only variant today.
+                // S5 RE-GROUNDED (2026-06-23, live engine run, WANVideoTesting, animation_001 @
+                // 512×288/65f on the 128 GB box): MEASURED peak phys_footprint 102.2 GB (load 221 s,
+                // run 1788 s, no watchdog, coherent output). residentBytes set to 103 GB so the
+                // governor's reservation covers the real decode-peak. Native-res is higher → pro tier.
                 footprints: [
-                    QuantFootprint(quant: .bf16, residentBytes: 100_000_000_000),
+                    QuantFootprint(quant: .bf16, residentBytes: 103_000_000_000),
                 ],
                 requiredBackends: [.metalGPU],
                 os: OSRequirement(minMacOS: SemanticVersion(major: 26, minor: 0, patch: 0)),
