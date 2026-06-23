@@ -3,3 +3,4 @@
 .build/
 Fixtures/*.npy
 weights/
+out/

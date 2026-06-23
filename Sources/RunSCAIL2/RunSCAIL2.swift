@@ -6,17 +6,25 @@ import SCAIL2
 
 @main
 struct RunSCAIL2 {
-    static func main() {
+    static func main() async {
         let args = CommandLine.arguments.dropFirst()
         guard let mode = args.first else {
             FileHandle.standardError.write(Data("""
             scail-2-mlx-swift — S0 scaffold. Gates land per PORTING-SPEC.md.
             usage: RunSCAIL2 --s0-gate | --s0b-gate | --generate <args>
 
+            --generate flags: --weights-dir DIR --image F --mask-image F --pose F
+              --mask-video F --prompt S [--replace-flag] --target-h N --target-w N
+              [--max-frames N] [--steps 16] [--solver dpm++|unipc] [--guide 5.0]
+              [--shift 5.0] [--segment-len 81] [--segment-overlap 5] [--seed 42]
+              [--out scail2_out.mp4]
+
             """.utf8))
             exit(1)
         }
         switch mode {
+        case "--generate":
+            exit(await GenerateMode.run(Array(args.dropFirst())))
         case "--s0-gate":
             let rest = Array(args.dropFirst())
             let weightsDir = rest.first

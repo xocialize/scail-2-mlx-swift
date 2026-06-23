@@ -156,6 +156,10 @@ public final class SCAILPipeline {
             eval(latent)  // bound the graph per step (family runBlocks discipline)
             onStep?(i + 1, timesteps.count)
         }
-        return vae.decode(latent[.newAxis])[0]  // [3, Tout, H, W]
+        // Streaming decode (the oracle's decode_chunked): the Rep first-chunk
+        // cache gives the upstream-faithful 1+(T-1)·4 frame count with flat
+        // peak memory. Whole-sequence `vae.decode` would emit 4·T frames with a
+        // divergent head + phase shift (oracle _WanVAEAdapter.decode comment).
+        return decodeStreaming(vae: vae, latent[.newAxis])[0]  // [3, Tout, H, W]
     }
 }
