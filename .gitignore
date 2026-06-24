@@ -4,3 +4,4 @@
 Fixtures/*.npy
 weights/
 out/
+.swiftpm/
