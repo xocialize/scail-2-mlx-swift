@@ -36,3 +36,15 @@ public struct SCAIL2Configuration: PackageConfiguration, ModelStorable, QuantCon
         case repo, revision, quant
     }
 }
+
+/// Cold-start weight prewarm (engine ≥0.7.0): page the resolved flat checkpoint (dit/vae/umt5/clip)
+/// into the OS file cache before `load()`'s GPU evals, so a cold load-time `eval` never faults
+/// weights off slow/external storage inside a live Metal command buffer (the cold-load GPU watchdog,
+/// `kIOGPUCommandBufferCallbackErrorTimeout`). SCAIL-2's loaders already page on the CPU stream
+/// (`Device.withDefaultDevice(.cpu)`) and a cold 32.8 GB DiT was measured not to trip the watchdog
+/// (102 GB peak run), so this is belt-and-suspenders. The whole resolved `modelDirectory` is paged;
+/// only the config knows the path, execution is the engine's (`WeightPrewarmer`, best-effort). Nil on
+/// the HF-download path → no-op.
+extension SCAIL2Configuration: WeightPrewarming {
+    public var prewarmPaths: [URL] { [modelDirectory].compactMap { $0 } }
+}
