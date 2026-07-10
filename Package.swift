@@ -32,9 +32,9 @@ let package = Package(
         // The neutral Wan substrate, shared with bernini/ti2v/helios/vace/phantom.
         // Local path dep; a wan-core edit recompiles into every consumer.
         .package(path: "../wan-core-mlx-swift"),
-        // MLXEngine contract (MLXToolKit) for the S7 wrapper target. 0.9.0 = contract 1.6.0,
-        // the version that introduced `characterAnimation` — this model's capability.
-        .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.9.1"),
+        // MLXEngine contract (MLXToolKit) for the S7 wrapper target; ≥0.27.0 for the CAN
+        // cancellation gate (MLXServeConformance.CancellationConformance).
+        .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.27.0"),
     ],
     targets: [
         .target(
@@ -75,6 +75,15 @@ let package = Package(
             dependencies: ["SCAIL2"],
             path: "Tests/SCAIL2Tests",
             resources: [.copy("Fixtures")]
+        ),
+        // Wrapper conformance (offline): the CAN cancellation gate.
+        .testTarget(
+            name: "MLXSCAIL2Tests",
+            dependencies: [
+                "MLXSCAIL2",
+                .product(name: "MLXServeConformance", package: "mlx-engine-swift"),
+            ],
+            path: "Tests/MLXSCAIL2Tests"
         ),
     ]
 )

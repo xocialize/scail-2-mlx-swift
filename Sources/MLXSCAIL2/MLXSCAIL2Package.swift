@@ -86,6 +86,9 @@ public final class MLXSCAIL2Package: ModelPackage {
     }
 
     public func run(_ request: any CapabilityRequest) async throws -> any CapabilityResponse {
+        // CAN-1: the entry checkpoint is the FIRST act of run() — before the notLoaded
+        // guard, capability validation, or dispatch (run-lifecycle program, engine 0.27.0).
+        try Task.checkCancellation()
         guard let runtime else { throw PackageError.notLoaded }
         switch request.capability {
         case .characterAnimation:
@@ -159,6 +162,9 @@ public final class MLXSCAIL2Package: ModelPackage {
             maxFrames: request.numFrames,
             onStep: onStep)
 
+        // Post-core checkpoint: the streaming VAE decode inside the runtime bails per
+        // temporal chunk (non-throwing) — discard a truncated result and rethrow here.
+        try Task.checkCancellation()
         return CharacterAnimationResponse(
             video: Video(format: .mp4, data: result.mp4,
                          durationSeconds: Double(result.frameCount) / result.fps,
