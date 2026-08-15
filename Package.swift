@@ -31,7 +31,7 @@ let package = Package(
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.1.6"),
         // The neutral Wan substrate, shared with bernini/ti2v/helios/vace/phantom.
         // Local path dep; a wan-core edit recompiles into every consumer.
-        .package(path: "../wan-core-mlx-swift"),
+        .package(url: "https://github.com/xocialize/wan-core-mlx-swift", from: "0.2.0"),
         // MLXEngine contract (MLXToolKit) for the S7 wrapper target; ≥0.27.0 for the CAN
         // cancellation gate (MLXServeConformance.CancellationConformance).
         .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.27.0"),
