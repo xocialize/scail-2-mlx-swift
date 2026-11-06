@@ -26,12 +26,12 @@ let package = Package(
         .library(name: "MLXSCAIL2", targets: ["MLXSCAIL2"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.30.0"),
+        .package(url: "https://github.com/ml-explore/mlx-swift.git", "0.32.3"..<"0.33.0"),  // NAX split-K fix (AB-R-0778)
         // Tokenizers (umT5 sentencepiece) only; weight download is our own loader.
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.1.6"),
         // The neutral Wan substrate, shared with bernini/ti2v/helios/vace/phantom.
         // Local path dep; a wan-core edit recompiles into every consumer.
-        .package(url: "https://github.com/xocialize/wan-core-mlx-swift", from: "0.2.0"),
+        .package(url: "https://github.com/xocialize/wan-core-mlx-swift", from: "0.3.0"),
         // MLXEngine contract (MLXToolKit) for the S7 wrapper target; ≥0.27.0 for the CAN
         // cancellation gate (MLXServeConformance.CancellationConformance).
         .package(url: "https://github.com/xocialize/mlx-engine-swift", from: "0.27.0"),
