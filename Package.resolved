@@ -1,5 +1,5 @@
 {
-  "originHash" : "ba250f3e52e2962fb4b79dfa0756d0d4923ab8af843a2fdd92acf5e1f48fb756",
+  "originHash" : "3af5107ba1c38a544e760616299c6b56887d39698026114093851ddfd74361d2",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "8de8b57f827869c10f9dbfe4c0d56ee35c20bf9f",
         "version" : "0.27.0"
+      }
+    },
+    {
+      "identity" : "mlx-exact-conv-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/xocialize/mlx-exact-conv-swift",
+      "state" : {
+        "revision" : "885f79331f84a6299440ac7f09823d9bafce7460",
+        "version" : "0.1.1"
       }
     },
     {
@@ -132,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xocialize/wan-core-mlx-swift",
       "state" : {
-        "revision" : "a7632c30a81e6e5d40e6f11c02b3b85d7e906271",
-        "version" : "0.3.0"
+        "revision" : "df6609c57ada6c22c043b989eba5b044a721c5d2",
+        "version" : "0.6.0"
       }
     },
     {
